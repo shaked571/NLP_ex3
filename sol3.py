@@ -1,7 +1,6 @@
 from nltk.corpus import dependency_treebank
 from itertools import product
 import nltk
-import numpy as np
 
 # nltk.download()
 TAG = 'tag'
