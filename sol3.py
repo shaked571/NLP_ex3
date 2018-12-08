@@ -11,41 +11,40 @@ train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
 test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
 
 
-first_sent = parsed_sents[1]
-# for node in first_sent.nodes:
-#     print(first_sent.nodes[node]['word'])
-#
-#
-# p1 = ("John")
-
-# check
-
 def feature_function(node1, node2, sentence):
     sentence_vector = {}
     for node_i in sentence.nodes:
         for node_j in sentence.nodes:
             if node_i is not node_j:
-                if sentence.nodes[node_i][WORD] is node1[WORD] and sentence.nodes[node_j][WORD] is node2[WORD]:
+                if sentence.nodes[node_i][WORD] == node1[WORD] and sentence.nodes[node_j][WORD] == node2[WORD]:
                     sentence_vector[(sentence.nodes[node_i][WORD], sentence.nodes[node_j][WORD])] = 1
                 else:
                     sentence_vector[(sentence.nodes[node_i][WORD], sentence.nodes[node_j][WORD])] = 0
-                if sentence.nodes[node_i][TAG] is node1[TAG] and sentence.nodes[node_j][TAG] is node2[TAG]:
+                if sentence.nodes[node_i][TAG] == node1[TAG] and sentence.nodes[node_j][TAG] == node2[TAG]:
                     sentence_vector[(sentence.nodes[node_i][TAG], sentence.nodes[node_j][TAG])] = 1
                 else:
                     sentence_vector[(sentence.nodes[node_i][TAG], sentence.nodes[node_j][TAG])] = 0
     return sentence_vector
 
-n1 = first_sent.nodes[0]
-n2 = first_sent.nodes[1]
-ret = feature_function(n1, n2, first_sent)
-for kv in ret:
-    print(kv)
+# first_sent = parsed_sents[1]
+# n1 = first_sent.nodes[0]
+# n2 = first_sent.nodes[1]
+# ret = feature_function(n1, n2, first_sent)
+# for kv in ret.items():
+#     print(kv)
 
 
-
-def distance_features(head, dependent, sentence):
-    head_indices = [i for i, x in enumerate(sentence) if x == head]
-    dependent_indices = [i for i, x in enumerate(sentence) if x == dependent]
+def distance_features(node1, node2, sentence):
+    head_word = node1[WORD]
+    dependent_word = node2[WORD]
+    head_indices = []
+    dependent_indices = []
+    for i in range(len(sentence.nodes)):
+        if sentence.nodes[i][WORD] == head_word:
+            head_indices += [i]
+    for i in range(len(sentence.nodes)):
+        if sentence.nodes[i][WORD] == dependent_word:
+            dependent_indices += [i]
     first, second = sorted(product(head_indices, dependent_indices), key=lambda t: abs(t[0] - t[1]))[0]
     dist = abs(first - second) - 1
     distance_dict = {'distance 0': 0, 'distance 1': 0, 'distance 2': 0, 'distance 3': 0}
@@ -59,7 +58,16 @@ def distance_features(head, dependent, sentence):
         distance_dict['distance 3'] = 1
     return distance_dict
 
-# sents = dependency_treebank.sents()
+
+def feature_function_with_distance(node1, node2, sentence):
+    feature_vec = feature_function(node1, node2, sentence)
+    distance_vec = distance_features(node1, node2, sentence)
+    for key, value in distance_vec.items():
+        feature_vec[key] = value
+    return feature_vec
+
+
+# sents = dependency_treebank.parsed_sents()
 # sentence_1 = sents[0]
-# dist_dict = distance_features('join', 'the', sentence_1)
+# dist_dict = feature_function_with_distance(sentence_1.nodes[5], sentence_1.nodes[1], sentence_1)
 # print(dist_dict)
