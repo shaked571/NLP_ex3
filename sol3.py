@@ -17,6 +17,7 @@ first_sent = parsed_sents[1]
 #
 # p1 = ("John")
 
+# check
 
 def feature_function(node1, node2, sentence):
     sentence_vector = {}
