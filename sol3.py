@@ -1,7 +1,8 @@
 from nltk.corpus import dependency_treebank
 from itertools import product
+from random import shuffle
+import numpy as np
 import nltk
-
 # nltk.download()
 TAG = 'tag'
 WORD = 'word'
@@ -65,6 +66,17 @@ def feature_function_with_distance(node1, node2, sentence):
         feature_vec[key] = value
     return feature_vec
 
+
+def perceptron_algorithm(X, Y):
+    learning_rate = 1
+    w = np.zeros(len(X[0]))
+    epochs = 2
+
+    for t in range(epochs):
+        shuffle(X)
+        for i, x in enumerate(X):
+            if (np.dot(X[i], w) * Y[i]) <= 0:
+                w = w + learning_rate * X[i] * Y[i]
 
 # sents = dependency_treebank.parsed_sents()
 # sentence_1 = sents[0]
