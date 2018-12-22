@@ -1,5 +1,5 @@
 from nltk.corpus import dependency_treebank
-from itertools import product
+from itertools import product, permutations
 from random import shuffle
 import numpy as np
 import nltk
@@ -71,12 +71,23 @@ def calculate_score_feature(feature_vector, weight_vector_w):
     return sum_of_product
 
 
-def calculate_feature_function_mst(mst):
-
-    pass
+def calculate_feature_function_mst(mst, sentence):
+    sum_of_vectors = {}
+    for arc in mst.values():
+        node1 = sentence.nodes[arc[2]]
+        node2 = sentence.nodes[arc[0]]
+        current_feature_vector = feature_function(node1, node2, sentence)
+        for key in current_feature_vector:
+            if key in sum_of_vectors:
+                sum_of_vectors[key] += current_feature_vector[key]
+            else:
+                sum_of_vectors[key] = current_feature_vector[key]
+    return sum_of_vectors
 
 
 def calculate_gold_tree(sentence):
+    sum_of_vectors = {}
+
     pass
 
 
@@ -95,14 +106,14 @@ def perceptron_algorithm(train_corpus):
         shuffle(train_corpus)
         for sentence in train_corpus:
             arcs_vector = []
-            for pair in product(sentence, repeat=2):
-                curr_weight = calculate_score_feature(feature_function(pair[0], pair[1], sentence), weight_vector_w)
-                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0][INDEX], curr_weight * -1, pair[1][INDEX])
+            for pair in permutations(sentence.nodes, 2):
+                curr_weight = calculate_score_feature(feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight * -1, pair[1]) # TODO verify index and pair[0] is the same
                 arcs_vector.append(arc)
             # next phase
             print('Creating a new mst')
             mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
-            new_mst = calculate_feature_function_mst(mst)
+            new_mst = calculate_feature_function_mst(mst, sentence)
             gold_mst = calculate_gold_tree(sentence)
             # update_weight_vector(,
 
@@ -130,7 +141,7 @@ def main():
     train_set = []
     test_set = []
     try:
-        nltk.download()
+        # nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
         train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
         test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
