@@ -3,6 +3,10 @@ from itertools import product
 from random import shuffle
 import numpy as np
 import nltk
+
+SINK = 0
+
+INDEX = 'address'
 TAG = 'tag'
 WORD = 'word'
 import Chu_Liu_Edmonds_algorithm
@@ -60,14 +64,20 @@ def feature_function_with_distance(node1, node2, sentence):
 
 
 def calculate_score_feature(feature_vector, weight_vector_w):
+    sum_of_product = 0
     for key in feature_vector:
         if key in weight_vector_w:
+            sum_of_product += weight_vector_w[key] * feature_vector
+    return sum_of_product
 
 
-    feature_vector
+def calculate_feature_function_mst(mst):
+
+    pass
 
 
-    return 1
+def calculate_gold_tree(sentence):
+    pass
 
 
 def perceptron_algorithm(train_corpus):
@@ -82,17 +92,19 @@ def perceptron_algorithm(train_corpus):
     print("Going over all the sentences")
     for i in range(epochs):
         print("starting " + str(i + 1) + " iteration over the examples")
-        train_corpus = shuffle(train_corpus)
+        shuffle(train_corpus)
         for sentence in train_corpus:
             arcs_vector = []
             for pair in product(sentence, repeat=2):
-                curr_weight =  calculate_score_feature(feature_function(pair[0], pair[1], sentence), weight_vector_w)
-                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight, pair[1])
+                curr_weight = calculate_score_feature(feature_function(pair[0], pair[1], sentence), weight_vector_w)
+                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0][INDEX], curr_weight * -1, pair[1][INDEX])
                 arcs_vector.append(arc)
-            weight_vector_w
-
             # next phase
-            Chu_Liu_Edmonds_algorithm.
+            print('Creating a new mst')
+            mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
+            new_mst = calculate_feature_function_mst(mst)
+            gold_mst = calculate_gold_tree(sentence)
+            # update_weight_vector(,
 
 
 
@@ -100,7 +112,9 @@ def perceptron_algorithm(train_corpus):
 
 
 
-# for t in range(epochs):
+
+
+        # for t in range(epochs):
     #     for i, x in enumerate(train_data):
     #         if (np.dot(train_data[i], weight_vector_w) * labaled_data_y[i]) <= 0:
     #             weight_vector_w = weight_vector_w + learning_rate * train_data[i] * labaled_data_y[i]
@@ -113,7 +127,8 @@ def main():
     # Get the data
     ####################################################################################################################
     print("Getting data")
-
+    train_set = []
+    test_set = []
     try:
         nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
@@ -128,11 +143,10 @@ def main():
     ####################################################################################################################
     #  Calculate the vectors using the feature and distance vectors
     ####################################################################################################################
-    print("Starting to Calculating the vectors")
+    print("Starting perceptron algorithm ")
+    perceptron_algorithm(train_set)
 
-    for sents in train_set:
-        product(sents)
-    dest_dict = feature_function_with_distance()
+    # dest_dict = feature_function_with_distance()
 
 
 
