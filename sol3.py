@@ -220,8 +220,8 @@ def main():
     try:
         # nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
-        train_set = parsed_sents[:(int(len(parsed_sents) * 0.05))]
-        test_set = parsed_sents[(int(len(parsed_sents) * 0.998)):]
+        train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
+        test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
     except:
         print("couldn't get the data")
         exit(1)
