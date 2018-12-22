@@ -117,7 +117,7 @@ def recursive_on_tree(node, sentence, arcs_dict):
         return
     for node_index in node['deps']['']:
         index = sentence.nodes[node_index][INDEX]
-        arcs_dict[index] = Chu_Liu_Edmonds_algorithm.Arc(node[WORD], 0, sentence.nodes[node_index][WORD])
+        arcs_dict[index] = Chu_Liu_Edmonds_algorithm.Arc(tail=sentence.nodes[node_index][INDEX], weight=0, head=node[INDEX])
         recursive_on_tree(sentence.nodes[node_index], sentence, arcs_dict)
     return
 
@@ -126,7 +126,7 @@ def get_arcs_from_sentence(sentence):
     node1 = sentence.nodes[0]
     for node2_index in sentence.nodes[0]['deps']['ROOT']:
         index = sentence.nodes[node2_index][INDEX]
-        arcs_dict[index] = Chu_Liu_Edmonds_algorithm.Arc(node1[WORD], 0, sentence.nodes[node2_index][WORD])
+        arcs_dict[index] = Chu_Liu_Edmonds_algorithm.Arc(tail=sentence.nodes[node2_index][INDEX], weight=0, head=node1[INDEX])
         recursive_on_tree(sentence.nodes[node2_index], sentence, arcs_dict)
     return arcs_dict
 
@@ -173,7 +173,7 @@ def perceptron_algorithm(train_corpus):
             arcs_vector = []
             for pair in permutations(sentence.nodes, 2):
                 curr_weight = calculate_score_feature(feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
-                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight * -1, pair[1]) # TODO verify index and pair[0] is the same
+                arc = Chu_Liu_Edmonds_algorithm.Arc(tail=pair[0], weight=curr_weight * -1, head=pair[1])
                 arcs_vector.append(arc)
             # next phase
             print('Creating a new mst ' + str(counter))
@@ -191,8 +191,8 @@ def perceptron_algorithm(train_corpus):
 def get_error_gold_vs_result(gold_dict, mst):
     correct = 0
     mst_arcs = mst.values()
-    for arc in gold_dict.values():
-        if arc in mst_arcs:
+    for mst_arc in mst_arcs:
+        if Chu_Liu_Edmonds_algorithm.Arc(tail=mst_arc.tail, weight=0, head=mst_arc.head) in gold_dict.values():
             correct += 1
     return correct
 
@@ -223,11 +223,15 @@ def main():
     weight_vector_w = perceptron_algorithm(train_set)
     print("finish to calculate the weight vector")
     error_count = []
+    counter = 0
     for sentence in test_set:
+        counter += 1
         arcs_vector = get_arcs_vector(sentence, weight_vector_w)
         mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
         arcs_dict = get_arcs_from_sentence(sentence)
-        error_count.append(get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes))
+        current_error_rate = get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes)
+        error_count.append(current_error_rate)
+        print("current error rate: " + str(current_error_rate) + " iteration: " + str(counter))
     avg = np.average(error_count)
     print("the avg is: " + str(avg))
 
@@ -237,7 +241,7 @@ def get_arcs_vector(sentence, weight_vector_w):
     for pair in permutations(sentence.nodes, 2):
         curr_weight = calculate_score_feature(
             feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
-        arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight * -1, pair[1])
+        arc = Chu_Liu_Edmonds_algorithm.Arc(tail=pair[1], weight=curr_weight * -1, head=pair[0])
         arcs_vector.append(arc)
     return arcs_vector
 
