@@ -125,6 +125,19 @@ def subtract_feature_vectors(vector1, vector2):
     return vector1_copy
 
 
+def get_final_weight_vector(list_of_weight_vectors_w, epochs, sentence_num):
+    final_w = {}
+    for w_vec in list_of_weight_vectors_w:
+        for key in w_vec:
+            if key in final_w:
+                final_w[key] += w_vec[key]
+            else:
+                final_w[key] = w_vec[key]
+    for key in final_w:
+        final_w[key] /= (epochs * sentence_num)
+    return final_w
+
+
 
 def perceptron_algorithm(train_corpus):
     ####################################################################################################################
@@ -156,8 +169,8 @@ def perceptron_algorithm(train_corpus):
             result = subtract_feature_vectors(gold_mst, new_mst)
             weight_vector_w = sum_feature_vectors([weight_vector_w, result])
             list_of_weight_vectors_w.append(copy.deepcopy(weight_vector_w))
-
-    return 1 / (epochs * len(train_corpus))
+    final_w = get_final_weight_vector(list_of_weight_vectors_w, epochs, len(train_corpus))
+    return final_w
 
 
 
