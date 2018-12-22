@@ -3,12 +3,9 @@ from itertools import product
 from random import shuffle
 import numpy as np
 import nltk
-# nltk.download()
 TAG = 'tag'
 WORD = 'word'
-parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
-train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
-test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
+import Chu_Liu_Edmonds_algorithm
 
 
 def feature_function(node1, node2, sentence):
@@ -26,12 +23,7 @@ def feature_function(node1, node2, sentence):
                     sentence_vector[(sentence.nodes[node_i][TAG], sentence.nodes[node_j][TAG])] = 0
     return sentence_vector
 
-# first_sent = parsed_sents[1]
-# n1 = first_sent.nodes[0]
-# n2 = first_sent.nodes[1]
-# ret = feature_function(n1, n2, first_sent)
-# for kv in ret.items():
-#     print(kv)
+
 
 
 def distance_features(node1, node2, sentence):
@@ -67,16 +59,93 @@ def feature_function_with_distance(node1, node2, sentence):
     return feature_vec
 
 
-def perceptron_algorithm(X, Y):
-    learning_rate = 1
-    w = np.zeros(len(X[0]))
+def calculate_score_feature(feature_vector, weight_vector_w):
+    for key in feature_vector:
+        if key in weight_vector_w:
+
+
+    feature_vector
+
+
+    return 1
+
+
+def perceptron_algorithm(train_corpus):
+    ####################################################################################################################
+    # INIT
+    ####################################################################################################################
+    print("init perceptron_algorithm")
+    # labaled_data_y = test_corus
+    weight_vector_w = {}
     epochs = 2
 
-    for t in range(epochs):
-        shuffle(X)
-        for i, x in enumerate(X):
-            if (np.dot(X[i], w) * Y[i]) <= 0:
-                w = w + learning_rate * X[i] * Y[i]
+    print("Going over all the sentences")
+    for i in range(epochs):
+        print("starting " + str(i + 1) + " iteration over the examples")
+        train_corpus = shuffle(train_corpus)
+        for sentence in train_corpus:
+            arcs_vector = []
+            for pair in product(sentence, repeat=2):
+                curr_weight =  calculate_score_feature(feature_function(pair[0], pair[1], sentence), weight_vector_w)
+                arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight, pair[1])
+                arcs_vector.append(arc)
+            weight_vector_w
+
+            # next phase
+            Chu_Liu_Edmonds_algorithm.
+
+
+
+
+
+
+
+# for t in range(epochs):
+    #     for i, x in enumerate(train_data):
+    #         if (np.dot(train_data[i], weight_vector_w) * labaled_data_y[i]) <= 0:
+    #             weight_vector_w = weight_vector_w + learning_rate * train_data[i] * labaled_data_y[i]
+
+
+
+def main():
+
+    ####################################################################################################################
+    # Get the data
+    ####################################################################################################################
+    print("Getting data")
+
+    try:
+        nltk.download()
+        parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
+        train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
+        test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
+    except:
+        print("couldn't get the data")
+        exit(1)
+
+    print("Finished Getting data")
+
+    ####################################################################################################################
+    #  Calculate the vectors using the feature and distance vectors
+    ####################################################################################################################
+    print("Starting to Calculating the vectors")
+
+    for sents in train_set:
+        product(sents)
+    dest_dict = feature_function_with_distance()
+
+
+
+
+if __name__ == '__main__':
+    main()
+# first_sent = parsed_sents[1]
+# n1 = first_sent.nodes[0]
+# n2 = first_sent.nodes[1]
+# ret = feature_function(n1, n2, first_sent)
+# for kv in ret.items():
+#     print(kv)
+
 
 # sents = dependency_treebank.parsed_sents()
 # sentence_1 = sents[0]
