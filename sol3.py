@@ -3,6 +3,7 @@ from itertools import product, permutations
 from random import shuffle
 import numpy as np
 import nltk
+import copy
 
 SINK = 0
 
@@ -85,10 +86,44 @@ def calculate_feature_function_mst(mst, sentence):
     return sum_of_vectors
 
 
-def calculate_gold_tree(sentence):
-    sum_of_vectors = {}
+def recursive_graph(node, sentence, feature_function_node_tail_list):
+    if len(node['deps']) == 0:
+        return
+    for node_index in node['deps']['']:
+        feature_function_node_tail_list.append(feature_function(node, sentence.nodes[node_index], sentence))
+        recursive_graph(sentence.nodes[node_index], sentence, feature_function_node_tail_list)
+    return
 
-    pass
+
+def sum_feature_vectors(feature_function_list):
+    sum_of_vectors = {}
+    for current_feature_vector in feature_function_list:
+        for key in current_feature_vector:
+            if key in sum_of_vectors:
+                sum_of_vectors[key] += current_feature_vector[key]
+            else:
+                sum_of_vectors[key] = current_feature_vector[key]
+    return sum_of_vectors
+
+
+def calculate_gold_tree(sentence):
+    feature_function_node_tail_list = []
+    node1 = sentence.nodes[0]
+    for node2_index in sentence.nodes[0]['deps']['ROOT']:
+        feature_function_node_tail_list.append(feature_function(node1, sentence.nodes[node2_index], sentence))
+        recursive_graph(sentence.nodes[node2_index], sentence, feature_function_node_tail_list)
+    return sum_feature_vectors(feature_function_node_tail_list)
+
+
+def subtract_feature_vectors(vector1, vector2):
+    vector1_copy = copy.deepcopy(vector1)
+    for key in vector1_copy:
+        if key in vector2:
+            vector1_copy[key] -= vector2[key]
+        else:
+            vector1_copy[key] = vector2[key] * -1
+    return vector1_copy
+
 
 
 def perceptron_algorithm(train_corpus):
@@ -115,11 +150,9 @@ def perceptron_algorithm(train_corpus):
             mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
             new_mst = calculate_feature_function_mst(mst, sentence)
             gold_mst = calculate_gold_tree(sentence)
-            # update_weight_vector(,
-
-
-
-
+            result = subtract_feature_vectors(gold_mst, new_mst)
+            weight_vector_w = sum_feature_vectors([weight_vector_w, result])
+    print("w is finished")
 
 
 
