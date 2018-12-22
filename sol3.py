@@ -206,14 +206,15 @@ def main():
     #  Calculate the vectors using the feature and distance vectors
     ####################################################################################################################
     print("Starting perceptron algorithm ")
-    weight_vector = perceptron_algorithm(train_set)
+    weight_vector_w = perceptron_algorithm(train_set)
     print("finish calculating the weight vector")
     for sentence in test_set:
-
-
-
-    # dest_dict = feature_function_with_distance()
-
+        arcs_vector = []
+        for pair in permutations(sentence.nodes, 2):
+            curr_weight = calculate_score_feature(feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+            arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight * -1,pair[1])
+            arcs_vector.append(arc)
+        mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
 
 
 
