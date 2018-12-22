@@ -206,7 +206,11 @@ def main():
     #  Calculate the vectors using the feature and distance vectors
     ####################################################################################################################
     print("Starting perceptron algorithm ")
-    perceptron_algorithm(train_set)
+    weight_vector = perceptron_algorithm(train_set)
+    print("finish calculating the weight vector")
+    for sentence in test_set:
+
+
 
     # dest_dict = feature_function_with_distance()
 
