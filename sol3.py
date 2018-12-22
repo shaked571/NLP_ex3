@@ -72,12 +72,15 @@ def calculate_score_feature(feature_vector, weight_vector_w):
     return sum_of_product
 
 
-def calculate_feature_function_mst(mst, sentence):
+def calculate_feature_function_mst(mst, sentence, with_distance):
     sum_of_vectors = {}
     for arc in mst.values():
         node1 = sentence.nodes[arc[2]]
         node2 = sentence.nodes[arc[0]]
-        current_feature_vector = feature_function(node1, node2, sentence)
+        if with_distance:
+            current_feature_vector = feature_function_with_distance(node1, node2, sentence)
+        else:
+            current_feature_vector = feature_function(node1, node2, sentence)
         for key in current_feature_vector:
             if key in sum_of_vectors:
                 sum_of_vectors[key] += current_feature_vector[key]
@@ -96,20 +99,26 @@ def sum_feature_vectors(feature_function_list):
     return sum_of_vectors
 
 
-def recursive_graph(node, sentence, feature_function_node_tail_list):
+def recursive_graph(node, sentence, feature_function_node_tail_list, with_distance):
     if len(node['deps']) == 0:
         return
     for node_index in node['deps']['']:
-        feature_function_node_tail_list.append(feature_function(node, sentence.nodes[node_index], sentence))
-        recursive_graph(sentence.nodes[node_index], sentence, feature_function_node_tail_list)
+        if with_distance:
+            feature_function_node_tail_list.append(feature_function_with_distance(node, sentence.nodes[node_index], sentence))
+        else:
+            feature_function_node_tail_list.append(feature_function(node, sentence.nodes[node_index], sentence))
+        recursive_graph(sentence.nodes[node_index], sentence, feature_function_node_tail_list, with_distance)
     return
 
-def calculate_gold_tree(sentence):
+def calculate_gold_tree(sentence, with_distance):
     feature_function_node_tail_list = []
     node1 = sentence.nodes[0]
     for node2_index in sentence.nodes[0]['deps']['ROOT']:
-        feature_function_node_tail_list.append(feature_function(node1, sentence.nodes[node2_index], sentence))
-        recursive_graph(sentence.nodes[node2_index], sentence, feature_function_node_tail_list)
+        if with_distance:
+            feature_function_node_tail_list.append(feature_function_with_distance(node1, sentence.nodes[node2_index], sentence))
+        else:
+            feature_function_node_tail_list.append(feature_function(node1, sentence.nodes[node2_index], sentence))
+        recursive_graph(sentence.nodes[node2_index], sentence, feature_function_node_tail_list, with_distance)
     return sum_feature_vectors(feature_function_node_tail_list)
 
 def recursive_on_tree(node, sentence, arcs_dict):
@@ -154,7 +163,7 @@ def get_final_weight_vector(list_of_weight_vectors_w, epochs, sentence_num):
 
 
 
-def perceptron_algorithm(train_corpus):
+def perceptron_algorithm(train_corpus, with_distance):
     ####################################################################################################################
     # INIT
     ####################################################################################################################
@@ -172,15 +181,18 @@ def perceptron_algorithm(train_corpus):
         for sentence in train_corpus:
             arcs_vector = []
             for pair in permutations(sentence.nodes, 2):
-                curr_weight = calculate_score_feature(feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+                if with_distance:
+                    curr_weight = calculate_score_feature(feature_function_with_distance(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+                else:
+                    curr_weight = calculate_score_feature(feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
                 arc = Chu_Liu_Edmonds_algorithm.Arc(tail=pair[0], weight=curr_weight * -1, head=pair[1])
                 arcs_vector.append(arc)
             # next phase
             print('Creating a new mst ' + str(counter))
             counter += 1
             mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
-            new_mst = calculate_feature_function_mst(mst, sentence)
-            gold_mst = calculate_gold_tree(sentence)
+            new_mst = calculate_feature_function_mst(mst, sentence, with_distance)
+            gold_mst = calculate_gold_tree(sentence, with_distance)
             result = subtract_feature_vectors(gold_mst, new_mst)
             weight_vector_w = sum_feature_vectors([weight_vector_w, result])
             list_of_weight_vectors_w.append(copy.deepcopy(weight_vector_w))
@@ -208,39 +220,65 @@ def main():
     try:
         # nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
-        train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
-        test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
+        train_set = parsed_sents[:(int(len(parsed_sents) * 0.05))]
+        test_set = parsed_sents[(int(len(parsed_sents) * 0.998)):]
     except:
         print("couldn't get the data")
         exit(1)
 
     print("Finished Getting data")
 
+
     ####################################################################################################################
-    #  Calculate the vectors using the feature and distance vectors
+    #  Calculate the error rate using the feature vector
     ####################################################################################################################
     print("Starting perceptron algorithm ")
-    weight_vector_w = perceptron_algorithm(train_set)
+    weight_vector_w = perceptron_algorithm(train_set, with_distance=False)
     print("finish to calculate the weight vector")
     error_count = []
     counter = 0
     for sentence in test_set:
         counter += 1
-        arcs_vector = get_arcs_vector(sentence, weight_vector_w)
+        arcs_vector = get_arcs_vector(sentence, weight_vector_w, with_distance=False)
         mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
         arcs_dict = get_arcs_from_sentence(sentence)
         current_error_rate = get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes)
         error_count.append(current_error_rate)
         print("current error rate: " + str(current_error_rate) + " iteration: " + str(counter))
     avg = np.average(error_count)
-    print("the avg is: " + str(avg))
+    print("the avg without distance is: " + str(avg))
 
 
-def get_arcs_vector(sentence, weight_vector_w):
+    ####################################################################################################################
+    #  Calculate the error rate using the feature and distance vectors
+    ####################################################################################################################
+    print("Starting perceptron algorithm ")
+    weight_vector_w = perceptron_algorithm(train_set, with_distance=True)
+    print("finish to calculate the weight vector")
+    error_count = []
+    counter = 0
+    for sentence in test_set:
+        counter += 1
+        arcs_vector = get_arcs_vector(sentence, weight_vector_w, with_distance=True)
+        mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
+        arcs_dict = get_arcs_from_sentence(sentence)
+        current_error_rate = get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes)
+        error_count.append(current_error_rate)
+        print("current error rate: " + str(current_error_rate) + " iteration: " + str(counter))
+    avg = np.average(error_count)
+    print("the avg with distance is: " + str(avg))
+
+
+
+def get_arcs_vector(sentence, weight_vector_w, with_distance):
     arcs_vector = []
     for pair in permutations(sentence.nodes, 2):
-        curr_weight = calculate_score_feature(
-            feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+        if with_distance:
+            curr_weight = calculate_score_feature(
+                feature_function_with_distance(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
+        else:
+            curr_weight = calculate_score_feature(
+                feature_function(sentence.nodes[pair[0]], sentence.nodes[pair[1]], sentence), weight_vector_w)
         arc = Chu_Liu_Edmonds_algorithm.Arc(tail=pair[1], weight=curr_weight * -1, head=pair[0])
         arcs_vector.append(arc)
     return arcs_vector
@@ -248,20 +286,3 @@ def get_arcs_vector(sentence, weight_vector_w):
 
 if __name__ == '__main__':
     main()
-# first_sent = parsed_sents[1]
-# n1 = first_sent.nodes[0]
-# n2 = first_sent.nodes[1]
-# ret = feature_function(n1, n2, first_sent)
-# for kv in ret.items():
-#     print(kv)
-
-
-# sents = dependency_treebank.parsed_sents()
-# sentence_1 = sents[0]
-# dist_dict = feature_function_with_distance(sentence_1.nodes[5], sentence_1.nodes[1], sentence_1)
-# print(dist_dict)
-
-        # for t in range(epochs):
-    #     for i, x in enumerate(train_data):
-    #         if (np.dot(train_data[i], weight_vector_w) * labaled_data_y[i]) <= 0:
-    #             weight_vector_w = weight_vector_w + learning_rate * train_data[i] * labaled_data_y[i]
