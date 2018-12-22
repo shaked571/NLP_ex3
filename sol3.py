@@ -68,7 +68,7 @@ def calculate_score_feature(feature_vector, weight_vector_w):
     sum_of_product = 0
     for key in feature_vector:
         if key in weight_vector_w:
-            sum_of_product += weight_vector_w[key] * feature_vector
+            sum_of_product += weight_vector_w[key] * feature_vector[key]
     return sum_of_product
 
 
@@ -132,6 +132,7 @@ def perceptron_algorithm(train_corpus):
     ####################################################################################################################
     print("init perceptron_algorithm")
     # labaled_data_y = test_corus
+    list_of_weight_vectors_w = list()
     weight_vector_w = {}
     epochs = 2
 
@@ -139,6 +140,7 @@ def perceptron_algorithm(train_corpus):
     for i in range(epochs):
         print("starting " + str(i + 1) + " iteration over the examples")
         shuffle(train_corpus)
+        counter = 0
         for sentence in train_corpus:
             arcs_vector = []
             for pair in permutations(sentence.nodes, 2):
@@ -146,13 +148,16 @@ def perceptron_algorithm(train_corpus):
                 arc = Chu_Liu_Edmonds_algorithm.Arc(pair[0], curr_weight * -1, pair[1]) # TODO verify index and pair[0] is the same
                 arcs_vector.append(arc)
             # next phase
-            print('Creating a new mst')
+            print('Creating a new mst ' + str(counter))
+            counter += 1
             mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
             new_mst = calculate_feature_function_mst(mst, sentence)
             gold_mst = calculate_gold_tree(sentence)
             result = subtract_feature_vectors(gold_mst, new_mst)
             weight_vector_w = sum_feature_vectors([weight_vector_w, result])
-    print("w is finished")
+            list_of_weight_vectors_w.append(copy.deepcopy(weight_vector_w))
+
+    return 1 / (epochs * len(train_corpus))
 
 
 
@@ -176,7 +181,7 @@ def main():
     try:
         # nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
-        train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
+        train_set = parsed_sents[:(int(len(parsed_sents) * 0.005))]
         test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
     except:
         print("couldn't get the data")
