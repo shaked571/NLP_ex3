@@ -1,0 +1,1 @@
+the avg without distance is: 0.279496602848
