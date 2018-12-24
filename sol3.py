@@ -4,7 +4,7 @@ from random import shuffle
 import numpy as np
 import nltk
 import copy
-
+import json
 SINK = 0
 
 INDEX = 'address'
@@ -172,7 +172,7 @@ def perceptron_algorithm(train_corpus, with_distance):
     list_of_weight_vectors_w = list()
     weight_vector_w = {}
     epochs = 2
-
+    train_corpus_size = str(len(train_corpus))
     print("Going over all the sentences")
     for i in range(epochs):
         print("starting " + str(i + 1) + " iteration over the examples")
@@ -188,7 +188,7 @@ def perceptron_algorithm(train_corpus, with_distance):
                 arc = Chu_Liu_Edmonds_algorithm.Arc(tail=pair[0], weight=curr_weight * -1, head=pair[1])
                 arcs_vector.append(arc)
             # next phase
-            print('Creating a new mst ' + str(counter))
+            print('Creating a new mst ' + str(counter) + " from: " + train_corpus_size)
             counter += 1
             mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
             new_mst = calculate_feature_function_mst(mst, sentence, with_distance)
@@ -220,8 +220,8 @@ def main():
     try:
         # nltk.download()
         parsed_sents = dependency_treebank.parsed_sents()  # Download all the data
-        train_set = parsed_sents[:(int(len(parsed_sents) * 0.9))]
-        test_set = parsed_sents[(int(len(parsed_sents) * 0.9)):]
+        train_set = parsed_sents[:(int(len(parsed_sents) * 0.3))]
+        test_set = parsed_sents[(int(len(parsed_sents) * 0.95)):]
     except:
         print("couldn't get the data")
         exit(1)
@@ -237,18 +237,22 @@ def main():
     print("finish to calculate the weight vector")
     error_count = []
     counter = 0
+    test_set_size = str(len(test_set))
     for sentence in test_set:
+        print("sen num "+str(counter) + " from : " + test_set_size)
+
         counter += 1
         arcs_vector = get_arcs_vector(sentence, weight_vector_w, with_distance=False)
         mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
         arcs_dict = get_arcs_from_sentence(sentence)
         current_error_rate = get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes)
         error_count.append(current_error_rate)
-        print("current error rate: " + str(current_error_rate) + " iteration: " + str(counter))
     avg = np.average(error_count)
-    print("the avg without distance is: " + str(avg))
+    print("the avg without distance is: " + str(avg), file=open("output.txt", "a"))
 
-
+    f = open('result.txt', 'w+')
+    f.write(json.dumps(weight_vector_w))
+    weight_vector_w = None
     ####################################################################################################################
     #  Calculate the error rate using the feature and distance vectors
     ####################################################################################################################
@@ -258,17 +262,21 @@ def main():
     error_count = []
     counter = 0
     for sentence in test_set:
+        print("sen num "+str(counter) + " from : " + test_set_size)
         counter += 1
         arcs_vector = get_arcs_vector(sentence, weight_vector_w, with_distance=True)
         mst = Chu_Liu_Edmonds_algorithm.min_spanning_arborescence(arcs_vector, SINK)
         arcs_dict = get_arcs_from_sentence(sentence)
         current_error_rate = get_error_gold_vs_result(arcs_dict, mst) / len(sentence.nodes)
         error_count.append(current_error_rate)
-        print("current error rate: " + str(current_error_rate) + " iteration: " + str(counter))
     avg = np.average(error_count)
-    print("the avg with distance is: " + str(avg))
-
-
+    print("the avg with distance is: " + str(avg), file=open("output.txt", "a"))
+    try:
+        f = open('result2.txt', 'w+')
+        f.write(json.dumps(weight_vector_w))
+    # the part in the try wasnt check good
+    except:
+        print("coudlnt save the vector")
 
 def get_arcs_vector(sentence, weight_vector_w, with_distance):
     arcs_vector = []
